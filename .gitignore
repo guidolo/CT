@@ -1,0 +1,7 @@
+/data
+/secrets
+/.idea
+/.ipynb_checkpoints
+/CryptoTrade.egg-info
+*.pyc
+*.pyo
