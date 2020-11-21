@@ -1,6 +1,8 @@
 from core.environment.data_updater import Data_Updater
 import time
 import datetime
+import logging
+
 
 
 def seconds_to_next_hour(self, plus=0):
@@ -11,16 +13,16 @@ def seconds_to_next_hour(self, plus=0):
 
 
 if __name__ == '__main__':
-    print('Init program')
+    logging.info('Start Data Runner')
     data_mgr = Data_Updater(symbol='BTCUSDT', time_interval='1h')
-    print('First update: {}'.format(data_mgr.update_data()))
-    print('Sleep for {} minutes'.format(seconds_to_next_hour(2)/60))
+    logging.info('First update: {}'.format(data_mgr.update_data()))
+    logging.info('Sleep for {} minutes'.format(seconds_to_next_hour(2)/60))
     time.sleep(seconds_to_next_hour(2))
-    print('Init while')
+    logging.info('Init while')
     while True:
         if data_mgr.update_data():
-            print('Success update. See you in aprox one hour')
+            logging.info('Success update. See you in aprox one hour')
             time.sleep(seconds_to_next_hour(2))
         else:
-            print('Fail to update')
+            logging.info('Fail to update')
             time.sleep(60)
