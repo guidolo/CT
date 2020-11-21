@@ -3,6 +3,11 @@ import time
 import datetime
 import logging
 
+logging.basicConfig(filename='data_runner.log',
+                            filemode='a',
+                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                            datefmt='%H:%M:%S',
+                            level=logging.DEBUG)
 
 
 def seconds_to_next_hour(self, plus=0):
