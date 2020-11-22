@@ -45,7 +45,7 @@ class Environment:
             if self.current_time >= self.last_timestamp:
                 self.end = True
         else:
-            logging.info('env - step: waiting for {} minutes'.fotmat(minutes*60))
+            logging.info('env - step: waiting for {} minutes'.format(minutes*60))
             time.sleep(minutes*60)
 
     def restart(self):
