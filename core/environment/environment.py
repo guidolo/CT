@@ -3,6 +3,7 @@ import pandas as pd
 import os 
 from pathlib import Path
 import time
+import logging
 
 
 class Environment:
@@ -38,7 +39,6 @@ class Environment:
         else:
             return self.load_all_data().loc[self.start_time:]
 
-
     def step(self, minutes):
         if self.mode == 'test':
             self.current_time = self.current_time + timedelta(minutes=minutes)
@@ -58,14 +58,14 @@ class Environment:
 
     def buy(self):
         if self.mode == 'PROD':
-            print('Buying')
+            logging.info('Buying')
             return True
         else:
             return False
     
     def sell(self):
         if self.mode == 'PROD':
-            print('Selling')
+            logging.info('Selling')
             return True
         else:
             return False

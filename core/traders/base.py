@@ -1,8 +1,9 @@
 import pandas as pd
 import datetime
-from sklearn.base import BaseEstimator, ClassifierMixin
+#from sklearn.base import BaseEstimator, ClassifierMixin
+import logging
 
-class BaseTrader(BaseEstimator, ClassifierMixin):
+class BaseTrader():
     def __init__(self,
                  environment,
                  ):
@@ -11,6 +12,7 @@ class BaseTrader(BaseEstimator, ClassifierMixin):
         self.trade_num = 0
         self.trade_record = {}
         self.binsizes = {"1m": 1, "15m": 15, "5m": 5, "1h": 60, "1d": 1440}
+        self.last_timestamp = self.env.start_time
 
     def restart(self):
         pass
@@ -28,12 +30,14 @@ class BaseTrader(BaseEstimator, ClassifierMixin):
         return (next_hour - now).seconds + plus
 
     def start_investing(self):
+        logging.info('Start Investing')
         data = self.get_data()
         if self.evaluate_buy(data):
             self.env.buy()
             self.on_investment = True
             self.trace('buy', data)
         self.env.step(self.seconds_to_next_hour(plus=30)/60)
+        logging.info('Start Evaluation')
         self.evaluate()
 
     def get_data(self):
