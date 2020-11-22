@@ -45,6 +45,7 @@ class Environment:
             if self.current_time >= self.last_timestamp:
                 self.end = True
         else:
+            logging.info('env - step: waiting for {} minutes'.fotmat(minutes*60))
             time.sleep(minutes*60)
 
     def restart(self):
@@ -58,14 +59,14 @@ class Environment:
 
     def buy(self):
         if self.mode == 'PROD':
-            logging.info('Buying')
+            logging.info('env: Buying')
             return True
         else:
             return False
     
     def sell(self):
         if self.mode == 'PROD':
-            logging.info('Selling')
+            logging.info('env: Selling')
             return True
         else:
             return False

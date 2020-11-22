@@ -37,7 +37,6 @@ class BaseTrader():
             self.on_investment = True
             self.trace('buy', data)
         self.env.step(self.seconds_to_next_hour(plus=30)/60)
-        logging.info('Start Evaluation')
         self.evaluate()
 
     def get_data(self):
@@ -45,16 +44,18 @@ class BaseTrader():
             data = self.env.get_data()
             try_num = 0
             while self.last_timestamp == data.index.max():
+                logging.info('get_data: WARNING Nothing to get')
                 try_num += 1
-                print('Warning NO NEW DATA: try num {}'.format(try_num))
                 self.env.step(1)
                 data = self.env.get_data()
             self.last_timestamp = data.index.max()
+            logging.info('get_data: OK')
             return data
         else:
             return self.env.get_data()
 
     def evaluate(self):
+        logging.info('evaluation: Start Evaluation')
         while not self.env.end:
             data = self.get_data()
             if self.on_investment:
@@ -62,11 +63,15 @@ class BaseTrader():
                     self.env.sell()
                     self.on_investment = False
                     self.trace('sell', data)
+                else:
+                    logging.info('evaluation: Selling Evaluation = False')
             else:
                 if self.evaluate_buy(data):
                     self.env.buy()
                     self.on_investment = True
                     self.trace('buy', data)
+                else:
+                    logging.info('evaluation: Buying Evaluation: False')
             self.env.step(self.binsizes[self.env.time_delta])
 
     def trace(self, mode, data):
