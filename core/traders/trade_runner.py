@@ -3,7 +3,7 @@ from core.traders.MA_Trader import MA_Trader
 from core.environment.environment import  Environment
 from datetime import datetime
 
-logging.basicConfig(filename='data_runner.log',
+logging.basicConfig(filename='trade_runner.log',
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                             datefmt='%H:%M:%S',
