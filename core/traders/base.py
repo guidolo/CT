@@ -2,17 +2,25 @@ import pandas as pd
 import datetime
 #from sklearn.base import BaseEstimator, ClassifierMixin
 import logging
+from  core.environment.environment import Environment
 
 class BaseTrader():
     def __init__(self,
-                 environment,
+                 environment: Environment,
+                 on_investment=False,
                  ):
-        self.on_investment = False
+        self.on_investment = on_investment
         self.env = environment
         self.trade_num = 0
         self.trade_record = {}
         self.binsizes = {"1m": 1, "15m": 15, "5m": 5, "1h": 60, "1d": 1440}
         self.last_timestamp = self.env.start_time
+        if on_investment:
+            trace_data = {self.trade_num: {'start_datetime': self.env.current_time,
+                                           'start_price': self.env.get_current_price()
+                                           }
+                          }
+            self.trade_record.update(trace_data)
 
     def restart(self):
         pass
@@ -26,18 +34,8 @@ class BaseTrader():
     def seconds_to_next_hour(self, plus=0):
         delta = datetime.timedelta(hours=1)
         now = datetime.datetime.now()
-        next_hour = (now + delta).replace(microsecond=0, second=0, minute=2)
+        next_hour = (now + delta).replace(microsecond=0, second=0, minute=0)
         return (next_hour - now).seconds + plus
-
-    def start_investing(self):
-        logging.info('Start Investing')
-        data = self.get_data()
-        if self.evaluate_buy(data):
-            self.env.buy()
-            self.on_investment = True
-            self.trace('buy', data)
-        self.env.step(self.seconds_to_next_hour(plus=30)/60)
-        self.evaluate()
 
     def get_data(self):
         if self.env.mode == 'PROD':
@@ -55,36 +53,42 @@ class BaseTrader():
             return self.env.get_data()
 
     def evaluate(self):
-        logging.info('evaluation: Start Evaluation')
+        logging.info('trade evaluate: Start Evaluation')
         while not self.env.end:
             data = self.get_data()
+            print(len(data))
             if self.on_investment:
                 if self.evaluate_sell(data):
                     self.env.sell()
                     self.on_investment = False
                     self.trace('sell', data)
                 else:
-                    logging.info('evaluation: Selling Evaluation = False')
+                    logging.info('trade evaluation: Selling Evaluation = False')
             else:
                 if self.evaluate_buy(data):
                     self.env.buy()
                     self.on_investment = True
                     self.trace('buy', data)
                 else:
-                    logging.info('evaluation: Buying Evaluation: False')
-            self.env.step(self.binsizes[self.env.time_delta])
+                    logging.info('trade evaluation: Buying Evaluation: False')
+            self.env.step(self.seconds_to_next_hour(60)/60)
 
     def trace(self, mode, data):
         if mode == 'buy':
-            self.trade_record.update({self.trade_num: {'start_datetime': self.env.current_time,
-                                                       'start_price': data.close.iloc[-1]
-                                                       }
-                                      })
+            trace_data = {self.trade_num: {'start_datetime': self.env.current_time,
+                                           'start_price': data.close.iloc[-1]
+                                           }
+                          }
+            self.trade_record.update(trace_data)
         elif mode == 'sell':
-            self.trade_record.get(self.trade_num).update({'end_datetime': self.env.current_time,
-                                                          'end_price': data.close.iloc[-1]
-                                                          })
+            trace_data = {'end_datetime': self.env.current_time,
+                          'end_price': data.close.iloc[-1]
+                          }
+            self.trade_record.get(self.trade_num).update(trace_data)
             self.trade_num += 1
+        else:
+            trace_data = {}
+        logging.info('trade trace: {}'.format(trace_data))
 
     def fit(self, X, y):
         self.env.restart()

@@ -5,13 +5,14 @@ from ..instrument.moving_averages import MA
 class MA_Trader(BaseTrader):
     def __init__(self,
                  environment = None,
+                 on_investment: bool = False,
                  column_name: str = 'close',
                  period_short: int= 3,
                  period_long: int = 10,
                  panic = -0.01,
                  **kwargs
                  ):
-        super().__init__(environment)
+        super().__init__(environment, on_investment)
         self.period_short = period_short
         self.period_long = period_long
         self.column_name = column_name

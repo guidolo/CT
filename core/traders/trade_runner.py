@@ -16,10 +16,11 @@ env = Environment(mode='PROD',
                  )
 
 model = MA_Trader(environment=env,
+                  on_investment=True,
                   column_name='close',
                   period_long=25,
                   period_short=14,
                   panic=-0.03)
 
 if __name__ == '__main__':
-    model.start_investing()
+    model.evaluate()

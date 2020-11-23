@@ -6,6 +6,9 @@ from dateutil import parser
 from binance.client import Client
 from core.utils import data_utils
 import json
+import requests
+import logging
+import time
 
 class Data_Updater():
     def __init__(self,
@@ -15,16 +18,22 @@ class Data_Updater():
         self.time_interval = time_interval
         self.data_path = 'data/{}-{}-data.csv'.format(symbol, time_interval)
         self.data = []
-        self.binance_client = False
+        self.binance_client = Client
         self.last_timestamp = datetime.strptime('1 Jan 2019', '%d %b %Y')
         self.binsizes = {"1m": 1, "15m":15, "5m": 5, "1h": 60, "1d": 1440}
         self.get_initial_data()
-        self.init_client()
 
     def init_client(self):
         with open('secrets/binance.secrets', 'r') as f:
             secrets = json.loads(f.read())
-        self.binance_client = Client(api_key=secrets['api_key'], api_secret=secrets['api_secret'])
+        status = False
+        while not status:
+            try:
+                self.binance_client = Client(api_key=secrets['api_key'], api_secret=secrets['api_secret'])
+                status = True
+            except requests.exceptions.Timeout:
+                logging.info('init_client: Connection TimeOut')
+                time.sleep(60)
         return self
 
     def get_initial_data(self):
