@@ -9,7 +9,7 @@ logging.basicConfig(filename='trade_runner.log',
                             datefmt='%H:%M:%S',
                             level=logging.DEBUG)
 
-env = Environment(mode='test',
+env = Environment(mode='PROD',
                   start_time=datetime.fromisoformat('2020-02-01 00:00:00'),
                   symbol='BTCUSDT',
                   time_delta='1h')
