@@ -32,6 +32,9 @@ class Environment:
         self.all_data = self.load_all_data()
         self.binance_client = Client
 
+        self.precision = 8 #TODO get from binance_client.get_symbol_info('BTCUSDT')
+        self.stepsize = 0.00000100 #TODO get from binance_client.get_symbol_info('BTCUSDT') LOT_SIZE
+
     def init_client(self):
         with open('secrets/binance.secrets', 'r') as f:
             secrets = json.loads(f.read())
@@ -82,14 +85,14 @@ class Environment:
             self.init_client()
             coin_symbol = 'USDT'
             account = self.binance_client.get_account()
-            balance = account['balances'][np.argmax([x['asset'] == coin_symbol for x in account['balances']])]['free']
+            balance = float(account['balances'][np.argmax([x['asset'] == coin_symbol for x in account['balances']])]['free'])
             logging.info('env buy: {} balance: {}'.format(coin_symbol, balance))
             depth = self.binance_client.get_order_book(symbol=self.symbol)
             current_price = np.mean([float(x[0]) for x in depth['bids']])
             logging.info('env buy: {} mean bids price: {}'.format(self.symbol, current_price))
             quantity = balance / current_price
             logging.info('env buy: {} quantity: {}'.format(self.symbol, quantity))
-            quantity_trade = quantity * self.percentage_trade
+            quantity_trade = np.floor((quantity * self.percentage_trade) * 10**6) / 10**6
             logging.info('env buy: {} quantity to trade: {}'.format(self.symbol, quantity_trade))
             if self.mode == 'PROD':
                 order = self.binance_client.create_order(
@@ -114,7 +117,8 @@ class Environment:
             self.init_client()
             coin_symbol = 'BTC'
             account = self.binance_client.get_account()
-            quantity = account['balances'][np.argmax([x['asset'] == coin_symbol for x in account['balances']])]['free']
+            quantity = float(account['balances'][np.argmax([x['asset'] == coin_symbol for x in account['balances']])]['free'])
+            quantity = np.floor((quantity * 10**6) / 10**6)
             logging.info('env sell: {} quantity: {}'.format(self.symbol, quantity))
             if self.mode == 'PROD':
                 order = self.binance_client.create_order(

@@ -9,13 +9,13 @@ logging.basicConfig(filename='trade_runner.log',
                             datefmt='%H:%M:%S',
                             level=logging.DEBUG)
 
-env = Environment(mode='PROD',
+env = Environment(mode='test',
                   start_time=datetime.fromisoformat('2020-02-01 00:00:00'),
                   symbol='BTCUSDT',
                   time_delta='1h')
 
 model = MA_Trader(environment=env,
-                  on_investment=True,
+                  on_investment=False,
                   column_name='close',
                   period_long=25,
                   period_short=14,
