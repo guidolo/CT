@@ -1,8 +1,8 @@
 import pandas as pd
-import datetime
 #from sklearn.base import BaseEstimator, ClassifierMixin
 import logging
-from  core.environment.environment import Environment
+from core.environment.environment import Environment
+from core.utils.time_utils import seconds_to_next_hour
 
 class BaseTrader():
     def __init__(self,
@@ -30,12 +30,6 @@ class BaseTrader():
 
     def evaluate_sell(self, data) -> bool:
         NotImplemented
-
-    def seconds_to_next_hour(self, plus=0):
-        delta = datetime.timedelta(hours=1)
-        now = datetime.datetime.now()
-        next_hour = (now + delta).replace(microsecond=0, second=0, minute=0)
-        return (next_hour - now).seconds + plus
 
     def get_data(self):
         if self.env.mode == 'PROD':
@@ -71,7 +65,7 @@ class BaseTrader():
                     self.trace('buy', data)
                 else:
                     logging.info('trade evaluation: Buying Evaluation: False')
-            self.env.step(self.seconds_to_next_hour(60)/60)
+            self.env.step(seconds_to_next_hour(60)/60)
 
     def trace(self, mode, data):
         if mode == 'buy':

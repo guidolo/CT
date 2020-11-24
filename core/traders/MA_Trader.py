@@ -1,6 +1,6 @@
 import numpy as np
-from .base import BaseTrader
-from ..instrument.moving_averages import MA
+from core.traders.base import BaseTrader
+from core.instrument.moving_averages import MA
 
 class MA_Trader(BaseTrader):
     def __init__(self,
@@ -46,5 +46,6 @@ class MA_Trader(BaseTrader):
                 'period_long': self.period_long,
                 'environment': self.env,
                 'column_name': self.column_name,
-                'panic': self.panic
+                'panic': self.panic,
+                'on_investment': self.on_investment
                 }
