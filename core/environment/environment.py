@@ -118,7 +118,7 @@ class Environment:
             coin_symbol = 'BTC'
             account = self.binance_client.get_account()
             quantity = float(account['balances'][np.argmax([x['asset'] == coin_symbol for x in account['balances']])]['free'])
-            quantity = np.floor((quantity * 10**6) / 10**6)
+            quantity = np.floor(quantity * 10**6) / 10**6
             logging.info('env sell: {} quantity: {}'.format(self.symbol, quantity))
             if self.mode == 'PROD':
                 order = self.binance_client.create_order(

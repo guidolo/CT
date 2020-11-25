@@ -15,7 +15,7 @@ env = Environment(mode='PROD',
                   time_delta='1h')
 
 model = MA_Trader(environment=env,
-                  on_investment=False,
+                  on_investment=True,
                   column_name='close',
                   period_long=25,
                   period_short=14,
