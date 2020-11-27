@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import timedelta, datetime
 from dateutil import parser
 from binance.client import Client
-from core.utils import data_utils
+from core.utils import data_utils, time_utils
 import json
 import requests
 import logging
@@ -20,7 +20,6 @@ class Data_Updater():
         self.data = []
         self.binance_client = Client
         self.last_timestamp = datetime.strptime('1 Jan 2019', '%d %b %Y')
-        self.binsizes = {"1m": 1, "15m":15, "5m": 5, "1h": 60, "1d": 1440}
         self.get_initial_data()
 
     def init_client(self):
@@ -57,7 +56,7 @@ class Data_Updater():
     def get_new_data(self):
         self.init_client()
         oldest_point, newest_point = self.get_old_new_timestamp()
-        from_point = oldest_point + timedelta(minutes=self.binsizes[self.time_interval])
+        from_point = oldest_point + timedelta(minutes=time_utils.get_minutes_from_interval(self.time_interval))
         if from_point <= newest_point:
             binance_response = self.binance_client.get_historical_klines(self.symbol,
                                                                         self.time_interval,
