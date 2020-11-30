@@ -3,7 +3,7 @@ import pandas as pd
 import os 
 from pathlib import Path
 
-class Environment():
+class Data_Manager():
     def __init__(self, 
                  mode='sim', 
                  start_time = datetime.fromisoformat('2020-01-01 00:00:00'), 

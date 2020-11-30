@@ -1,23 +1,26 @@
 import numpy as np
-from core.traders.base import BaseTrader
-from core.instrument.moving_averages import MA
+from core.trade_service.traders.base import BaseTrader
+from core.trade_service.instruments.moving_averages import MA
+
 
 class MA_Trader(BaseTrader):
     def __init__(self,
-                 environment = None,
+                 mode='test',
+                 symbol='BTCUSDT',
+                 interval_source='5m',
+                 interval_group='1h',
                  on_investment: bool = False,
                  column_name: str = 'close',
-                 period_short: int= 3,
+                 period_short: int = 3,
                  period_long: int = 10,
-                 panic = -0.01,
-                 **kwargs
+                 panic=-0.01
                  ):
-        super().__init__(environment, on_investment)
+        super().__init__(mode, symbol, interval_source, interval_group, on_investment)
         self.period_short = period_short
         self.period_long = period_long
         self.column_name = column_name
-        self.ma_short = []
-        self.ma_long = []
+        self.ma_short: MA
+        self.ma_long: MA
         self.restart()
         self.panic = panic
 
@@ -33,19 +36,22 @@ class MA_Trader(BaseTrader):
             return False
 
     def evaluate_sell(self, data):
-        #evaluate panic
+        # evaluate panic
         buy_price = self.trade_record[np.max(list(self.trade_record.keys()))]['start_price']
         current_price = data.close.values[-1]
-        if (buy_price - current_price)/buy_price < self.panic:
+        if (buy_price - current_price) / buy_price < self.panic:
             return True
         else:
             return self.ma_short.evaluate(data)[-1] < self.ma_long.evaluate(data)[-1]
 
     def get_params(self, deep=True):
-        return {'period_short': self.period_short,
+        return {'mode': self.mode,
+                'symbol': self.symbol,
+                'interval_source': self.interval_source,
+                'interval_group': self.interval_group,
+                'on_investment': self.on_investment,
+                'period_short': self.period_short,
                 'period_long': self.period_long,
-                'environment': self.env,
                 'column_name': self.column_name,
-                'panic': self.panic,
-                'on_investment': self.on_investment
+                'panic': self.panic
                 }

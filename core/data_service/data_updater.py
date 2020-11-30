@@ -1,14 +1,15 @@
-
 from pathlib import Path
 import pandas as pd
 from datetime import timedelta, datetime
 from dateutil import parser
 from binance.client import Client
 from core.utils import data_utils, time_utils
+from core.utils.time_utils import get_minutes_from_interval
 import json
 import requests
 import logging
 import time
+
 
 class Data_Updater():
     def __init__(self,
@@ -16,10 +17,11 @@ class Data_Updater():
                  time_interval='1h'):
         self.symbol = symbol
         self.time_interval = time_interval
+        self.minutes_interval = get_minutes_from_interval(time_interval)
         self.data_path = 'data/{}-{}-data.csv'.format(symbol, time_interval)
         self.data = []
         self.binance_client = Client
-        self.last_timestamp = datetime.strptime('1 Jan 2019', '%d %b %Y')
+        self.last_timestamp = datetime.strptime('1 Jan 2020', '%d %b %Y')
         self.get_initial_data()
 
     def init_client(self):
@@ -45,7 +47,7 @@ class Data_Updater():
         if len(self.data) > 0:
             oldest_point = parser.parse(self.data["timestamp"].iloc[-1])
         else:
-            oldest_point = datetime.strptime('1 Jan 2019', '%d %b %Y')
+            oldest_point = datetime.strptime('1 Jan 2020', '%d %b %Y')
 
         newest_point = pd.to_datetime(
             self.binance_client.get_klines(symbol=self.symbol,
@@ -56,12 +58,12 @@ class Data_Updater():
     def get_new_data(self):
         self.init_client()
         oldest_point, newest_point = self.get_old_new_timestamp()
-        from_point = oldest_point + timedelta(minutes=time_utils.get_minutes_from_interval(self.time_interval))
+        from_point = oldest_point + timedelta(minutes=self.minutes_interval)
         if from_point <= newest_point:
             binance_response = self.binance_client.get_historical_klines(self.symbol,
-                                                                        self.time_interval,
-                                                                        from_point.strftime("%d %b %Y %H:%M:%S"),
-                                                                        newest_point.strftime("%d %b %Y %H:%M:%S")
+                                                                         self.time_interval,
+                                                                         from_point.strftime("%d %b %Y %H:%M:%S"),
+                                                                         newest_point.strftime("%d %b %Y %H:%M:%S")
                                                                          )
             data_new = data_utils.binanceklines_2_pandas(binance_response)
         else:
