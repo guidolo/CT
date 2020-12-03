@@ -4,7 +4,7 @@ import numpy as np
 binsizes = {"1m": 1, "15m": 15, "5m": 5, "1h": 60, "1d": 1440}
 
 
-def seconds_to_next_event(self, interval, plus_seconds=0):
+def seconds_to_next_event(interval, plus_seconds=0):
     assert interval in ['5m', '1h'], 'Interval not defined'
     now = datetime.datetime.now()
     if interval == '1h':

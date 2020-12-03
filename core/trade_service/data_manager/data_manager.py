@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import os
 from pathlib import Path
+from core.utils.time_utils import get_minutes_from_interval
 
 
 class Data_Manager:
@@ -20,12 +21,14 @@ class Data_Manager:
         self.symbol = symbol
         self.interval_source = interval_source
         self.interval_group = interval_group
+        self.minutes_source = get_minutes_from_interval(interval_source)
+        self.minutes_group = get_minutes_from_interval(interval_group)
         self.start_time = start_time
         self.last_timestamp = None
         self.end_data = False
-        #TODO pasar todo esta parte de la carga del archivo a un metodo
+        # TODO pasar todo esta parte de la carga del archivo a un metodo
         rootpath = Path(
-            os.path.dirname(os.path.realpath(__file__))).parent.parent  # TODO crear un setting con los paths
+            os.path.dirname(os.path.realpath(__file__))).parent.parent.parent  # TODO crear un setting con los paths
         self.filename = str(rootpath) + '/data/{}-{}-data.csv'.format(self.symbol, self.interval_source)
         assert Path(self.filename).exists(), 'Datasource must exists. Run Data_service to update it'
         self.all_data = self.load_all_data()
@@ -45,9 +48,44 @@ class Data_Manager:
             else:
                 if current_time == self.last_timestamp:
                     self.end_data = True
-                    return self.all_data.loc[self.start_time:current_time, ]
+                data = self.all_data.loc[self.start_time:current_time, ]
         else:
-            return self.load_all_data().loc[self.start_time:]
+            print('Warning!, Current time param is not used') if current_time else None
+            data = self.load_all_data().loc[self.start_time:]
+        if self.interval_source == self.interval_group:
+            return data
+        else:
+            return self._data_grouped(data, self.minutes_group, self.minutes_source)
+
+    def _data_grouped(self, data, minutes_group, minutes_source, max_records=None):
+        data_grouped = []
+        minutes_diff = minutes_group - minutes_source
+        end_datetime = data.index.max()
+        start_datetime = end_datetime - timedelta(minutes=minutes_diff)
+        data_chunk = data.loc[start_datetime:end_datetime, ]
+        max_records = 999_999 if not max_records else max_records
+        i = 0
+        while len(data_chunk) > 0 and i < max_records:
+            start_datetime = end_datetime - timedelta(minutes=minutes_diff)
+            data_chunk = data.loc[start_datetime:end_datetime, ]
+            data_grouped.append(self._aggregator(data_chunk))
+            end_datetime = start_datetime - timedelta(minutes=minutes_source)
+            i += 1
+        return pd.concat(data_grouped)
+
+    def _aggregator(self, data_chunk):
+        return pd.DataFrame({data_chunk.index[-1]: data_chunk.agg({'open': lambda x: x[0],
+                                                                   'high': max,
+                                                                   'low': min,
+                                                                   'close': lambda x: x[-1],
+                                                                   'volume': sum,
+                                                                   'close_time': lambda x: x[-1],
+                                                                   'quote_av': sum,
+                                                                   'trades': sum,
+                                                                   'tb_base_av': sum,
+                                                                   'tb_quote_av': sum
+                                                                   }
+                                                                  )}).T
 
     def restart(self):
         if self.mode == 'sim':
