@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime
 from core.trade_service.traders.base import BaseTrader
 from core.trade_service.instruments.moving_averages import MA
 
@@ -13,9 +14,10 @@ class MA_Trader(BaseTrader):
                  column_name: str = 'close',
                  period_short: int = 3,
                  period_long: int = 10,
-                 panic=-0.01
+                 panic=-0.01,
+                 start_time=datetime.fromisoformat('2020-01-01 00:00:00')
                  ):
-        super().__init__(mode, symbol, interval_source, interval_group, on_investment)
+        super().__init__(mode, symbol, interval_source, interval_group, start_time, on_investment)
         self.period_short = period_short
         self.period_long = period_long
         self.column_name = column_name

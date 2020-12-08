@@ -41,39 +41,45 @@ class Data_Manager:
         self.last_timestamp = data.timestamp.max()
         return data.set_index('timestamp')
 
-    def get_data(self, current_time=None):
-        if self.mode == 'sim':
-            if not current_time:
-                raise ValueError
-            else:
-                if current_time == self.last_timestamp:
-                    self.end_data = True
-                data = self.all_data.loc[self.start_time:current_time, ]
+    def get_data(self):
+        data = self.load_all_data().loc[self.start_time:]
+        return self.manage_data_(data)
+
+    def get_data_to(self, current_time=None):
+        if not current_time:
+            raise ValueError
         else:
-            print('Warning!, Current time param is not used') if current_time else None
-            data = self.load_all_data().loc[self.start_time:]
+            self.evaluate_current_time_(current_time)
+            data = self.all_data.loc[self.start_time:current_time, ]
+            return self.manage_data_(data)
+
+    def manage_data_(self, data):
         if self.interval_source == self.interval_group:
             return data
         else:
             return self._data_grouped(data, self.minutes_group, self.minutes_source)
 
+    def evaluate_current_time_(self, current_time):
+        if current_time == self.last_timestamp:
+            self.end_data = True
+
     def _data_grouped(self, data, minutes_group, minutes_source, max_records=None):
         data_grouped = []
-        minutes_diff = minutes_group - minutes_source
+        window = minutes_group - minutes_source
         end_datetime = data.index.max()
-        start_datetime = end_datetime - timedelta(minutes=minutes_diff)
+        start_datetime = end_datetime - timedelta(minutes=window)
         data_chunk = data.loc[start_datetime:end_datetime, ]
         max_records = 999_999 if not max_records else max_records
         i = 0
         while len(data_chunk) > 0 and i < max_records:
-            start_datetime = end_datetime - timedelta(minutes=minutes_diff)
-            data_chunk = data.loc[start_datetime:end_datetime, ]
-            data_grouped.append(self._aggregator(data_chunk))
+            data_grouped.append(self.aggregator_(data_chunk))
             end_datetime = start_datetime - timedelta(minutes=minutes_source)
+            start_datetime = end_datetime - timedelta(minutes=window)
+            data_chunk = data.loc[start_datetime:end_datetime, ]
             i += 1
         return pd.concat(data_grouped)
 
-    def _aggregator(self, data_chunk):
+    def aggregator_(self, data_chunk):
         return pd.DataFrame({data_chunk.index[-1]: data_chunk.agg({'open': lambda x: x[0],
                                                                    'high': max,
                                                                    'low': min,

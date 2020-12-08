@@ -13,7 +13,7 @@ def test_length_sim_mode():
     lengths = []
     for hour in range(1, 25):
         current_datetime = datetime.fromisoformat('2020-01-01 00:00:00') + timedelta(hours=hour)
-        temp_data = dm.get_data(current_datetime)
+        temp_data = dm.get_data_to(current_datetime)
         lengths.append(len(temp_data))
     return lengths == [13, 25, 37, 49, 61, 73, 85, 97, 109, 121, 133, 145, 157, 169, 181, 193, 205, 217, 229, 241, 253,
                        265, 277, 289]
@@ -25,6 +25,6 @@ def test_close_sim_mode():
     close_total = 0
     for hour in range(1, 25):
         current_datetime = datetime.fromisoformat('2020-01-01 00:00:00') + timedelta(hours=hour)
-        temp_data = dm.get_data(current_datetime)
+        temp_data = dm.get_data_to(current_datetime)
         close_total += temp_data.close.sum()
     return close_total == 26150233.04

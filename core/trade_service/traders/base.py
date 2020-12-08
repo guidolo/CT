@@ -1,11 +1,12 @@
 import pandas as pd
-from datetime import timedelta
+from datetime import timedelta, datetime
 import time
-#from sklearn.base import BaseEstimator, ClassifierMixin
+# from sklearn.base import BaseEstimator, ClassifierMixin
 import logging
 from core.trade_service.data_manager.data_manager import Data_Manager
 from core.connectors.binance_connector import Binance_Connector
-from core.utils.time_utils import seconds_to_next_hour
+from core.utils.time_utils import seconds_to_next_event, get_minutes_from_interval
+
 
 class BaseTrader():
     def __init__(self,
@@ -13,7 +14,8 @@ class BaseTrader():
                  symbol='BTCUSDT',
                  interval_source='5m',
                  interval_group='1h',
-                 on_investment=False, #TODO, recuperar automaticamente
+                 start_time=datetime.fromisoformat('2020-01-01 00:00:00'),
+                 on_investment=False  # TODO, recuperar automaticamente
                  ):
         assert mode in ['PROD', 'test', 'sim'], 'mode should be PROD, test or sim'  # TODO pasar a un exception general
         self.mode = mode
@@ -23,17 +25,16 @@ class BaseTrader():
         self.data_mgr = Data_Manager(mode,
                                      symbol,
                                      interval_source=interval_source,
-                                     interval_group=interval_group)
-        if mode in ['PRD', 'test']:
-            self.con = Binance_Connector(mode, symbol)
-        else:
-            self.con = []
+                                     interval_group=interval_group,
+                                     start_time=start_time)
+        self.con = Binance_Connector(mode, symbol)
 
         self.on_investment = on_investment
         self.trade_num = 0
         self.trade_record = {}
         self.last_timestamp = self.data_mgr.start_time
-        self.current_time = self.data_mgr.start_time
+        self.current_time = self.data_mgr.start_time + \
+                            timedelta(minutes=get_minutes_from_interval(self.interval_source))
         if on_investment:
             trace_data = {self.trade_num: {'start_datetime': self.current_time,
                                            'start_price': self.con.get_current_price()
@@ -63,7 +64,7 @@ class BaseTrader():
             logging.info('get_data: OK')
             return data
         else:
-            return self.data_mgr.get_data(self.current_time)
+            return self.data_mgr.get_data_to(self.current_time)
 
     def evaluate(self):
         logging.info('trade evaluate: Start Evaluation')
@@ -83,7 +84,10 @@ class BaseTrader():
                     self.trace('buy', data)
                 else:
                     logging.info('trade evaluation: Buying Evaluation: False')
-            self.wait(seconds_to_next_hour(60)/60)
+            if self.mode in ['test', 'PROD']:
+                self.wait(seconds_to_next_event(self.interval_source, 20) / 60)
+            else:
+                self.update_current_time_(get_minutes_from_interval(self.interval_source))
 
     def trace(self, transaction_type: str, data):
         if transaction_type == 'buy':
@@ -131,8 +135,8 @@ class BaseTrader():
         :param minutes:
         :return:
         """
-        if self.mode == 'sim':
-            self.current_time = self.current_time + timedelta(minutes=minutes)
-        else:
-            logging.info('env - step: waiting for {} minutes'.format(minutes))
-            time.sleep(minutes*60)
+        logging.info('env - step: waiting for {} minutes'.format(minutes))
+        time.sleep(minutes * 60)
+
+    def update_current_time_(self, minutes):
+        self.current_time = self.current_time + timedelta(minutes=minutes)
