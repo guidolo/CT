@@ -1,5 +1,6 @@
 import matplotlib.pylab as pl
 import pandas as pd
+from core.trade_service.traders.base import BaseTrader
 
 def to_pandas(model):
     result_pd = pd.DataFrame(model.trade_record).T
@@ -7,9 +8,9 @@ def to_pandas(model):
     result_pd.dropna(inplace=True)
     return result_pd
 
-def plot_line_buysell(model):
-    result_pd = to_pandas(model)
-    model.env.get_data().close.plot(figsize=(12,5))
+def plot_line_buysell(trader:BaseTrader):
+    result_pd = to_pandas(trader)
+    trader.get_data().close.plot(figsize=(12, 5))
     for init, end in zip(result_pd.start_datetime, result_pd.end_datetime):
         pl.axvline(init, color='y')
         pl.axvline(end, color='r')

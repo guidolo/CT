@@ -41,9 +41,12 @@ class MA_Trader(BaseTrader):
         # evaluate panic
         buy_price = self.trade_record[np.max(list(self.trade_record.keys()))]['start_price']
         current_price = data.close.values[-1]
-        if (buy_price - current_price) / buy_price < self.panic:
+        gain = (current_price - buy_price) / buy_price
+        if gain < self.panic:
+            print(str(data.index[-1]) + ' TRUE ' +f'buy_price {buy_price}, current_price {current_price}, gain {gain}')
             return True
         else:
+            print(str(data.index[-1]) + ' FALSE ' + f'buy_price {buy_price}, current_price {current_price}, gain {gain}')
             return self.ma_short.evaluate(data)[-1] < self.ma_long.evaluate(data)[-1]
 
     def get_params(self, deep=True):
