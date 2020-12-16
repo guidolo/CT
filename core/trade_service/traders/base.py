@@ -66,7 +66,7 @@ class BaseTrader():
         else:
             return self.data_mgr.get_data_to(self.current_time)
 
-    def evaluate(self):
+    def evaluate(self, percentage_trade=1):
         logging.info('trade evaluate: Start Evaluation')
         while not self.data_mgr.end_data:
             data = self.get_data()
@@ -79,7 +79,7 @@ class BaseTrader():
                     logging.info('trade evaluation: Selling Evaluation = False')
             else:
                 if self.evaluate_buy(data):
-                    self.con.buy()
+                    self.con.buy(percentage_trade=percentage_trade)
                     self.on_investment = True
                     self.trace('buy', data)
                 else:
