@@ -43,10 +43,10 @@ class MA_Trader(BaseTrader):
         current_price = data.close.values[-1]
         gain = (current_price - buy_price) / buy_price
         if gain < self.panic:
-            print(str(data.index[-1]) + ' TRUE ' +f'buy_price {buy_price}, current_price {current_price}, gain {gain}')
+            #print(str(data.index[-1]) + ' TRUE ' +f'buy_price {buy_price}, current_price {current_price}, gain {gain}')
             return True
         else:
-            print(str(data.index[-1]) + ' FALSE ' + f'buy_price {buy_price}, current_price {current_price}, gain {gain}')
+            #print(str(data.index[-1]) + ' FALSE ' + f'buy_price {buy_price}, current_price {current_price}, gain {gain}')
             return self.ma_short.evaluate(data)[-1] < self.ma_long.evaluate(data)[-1]
 
     def get_params(self, deep=True):
