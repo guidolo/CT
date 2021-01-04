@@ -2,6 +2,8 @@
 /secrets
 /.idea
 /.ipynb_checkpoints
+.ipynb_checkpoints
+notebooks/.ipynb_checkpoints
 .pytest_cache
 /CryptoTrade.egg-info
 *.pyc

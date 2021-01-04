@@ -9,3 +9,5 @@ def binanceklines_2_pandas(binance_response):
     data['timestamp'] = pd.to_datetime(data['timestamp'], unit='ms').astype(str)
     #data.set_index('timestamp', inplace=True)
     return data
+
+
