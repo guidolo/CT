@@ -6,6 +6,7 @@ import logging
 from core.trade_service.data_manager.data_manager import Data_Manager
 from core.connectors.binance_connector import Binance_Connector
 from core.utils.time_utils import seconds_to_next_event, get_minutes_from_interval
+from core.trade_service.instruments import scores
 
 
 class BaseTrader():
@@ -116,11 +117,12 @@ class BaseTrader():
     def score(self, X, y):
         result_pd = pd.DataFrame(self.trade_record).T
         if len(result_pd) > 0:
-            result_pd.loc[:, 'gan'] = result_pd.apply(
-                lambda row: (row.end_price - row.start_price) * 100 / row.start_price,
-                axis=1)
+            #result_pd.loc[:, 'gain'] = result_pd.apply(
+            #    lambda row: (row.end_price - row.start_price) * 100 / row.start_price,
+            #    axis=1)
+            result_pd.loc[:, 'gain'] = scores.price_based_gain_adjusted(result_pd)
             result_pd.dropna(inplace=True)
-            return result_pd.gan.sum()
+            return result_pd.gain.sum()
         else:
             return 0
 
