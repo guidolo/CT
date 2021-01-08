@@ -8,58 +8,100 @@ from core.utils.time_utils import get_minutes_from_interval
 class Data_Manager:
     """
     La funcion del Data_Manager es la de proveer data.
+
+    Parameters
+    ----------
+
+    regroup_data: bool (default False)
+        If True, regroup dataset on interval_group time delta, based on interval_source piece of data
+        If False, last piece of data could be incomplete. For example if interval_group is 1h and
+        interval_source in 5m, and the current time is 00:17, the last record will contain information
+        until 00:15.
+
     """
 
     def __init__(self,
                  mode='test',
                  symbol='BTCUSDT',
                  start_time=datetime.fromisoformat('2020-01-01 00:00:00'),
-                 interval_source='5m',
-                 interval_group='1h',
+                 interval_minor='5m',
+                 interval_major='1h',
+                 regroup_data=False
                  ):
         self.mode = mode
         self.symbol = symbol
-        self.interval_source = interval_source
-        self.interval_group = interval_group
-        self.minutes_source = get_minutes_from_interval(interval_source)
-        self.minutes_group = get_minutes_from_interval(interval_group)
+        self.interval_minor = interval_minor
+        self.interval_major = interval_major
+        self.regroup_data = regroup_data
+        self.minutes_minor = get_minutes_from_interval(interval_minor)
+        self.minutes_major = get_minutes_from_interval(interval_major)
         self.start_time = start_time
         self.last_timestamp = None
         self.end_data = False
         # TODO pasar todo esta parte de la carga del archivo a un metodo
         rootpath = Path(
             os.path.dirname(os.path.realpath(__file__))).parent.parent.parent  # TODO crear un setting con los paths
-        self.filename = str(rootpath) + '/data/{}-{}-data.csv'.format(self.symbol, self.interval_source)
-        assert Path(self.filename).exists(), 'Datasource must exists. Run Data_service to update it'
-        self.all_data = self.load_all_data()
+        self.filename_minor = str(rootpath) + '/data/{}-{}-data.csv'.format(self.symbol, self.interval_minor)
+        self.filename_major = str(rootpath) + '/data/{}-{}-data.csv'.format(self.symbol, self.interval_major)
+        assert self.minutes_minor <= self.minutes_major, 'interval_minor should be lower than interval_mayor'
+        assert Path(self.filename_minor).exists(), 'Datasource must exists. Run Data_service to update it'
+        assert Path(self.filename_major).exists(), 'Datasource must exists. Run Data_service to update it'
         assert mode in ['PROD', 'test', 'sim'], 'mode should be PROD, test or sim'  # TODO pasar a un exception general
+        self._set_data()
 
-    def load_all_data(self):
-        data = pd.read_csv(self.filename)
+    def read_data(self, filename):
+        """
+            Read data from file
+        """
+        data = pd.read_csv(filename)
         data.loc[:, 'timestamp'] = pd.to_datetime(data.timestamp)
         data = data.sort_values('timestamp')
         self.last_timestamp = data.timestamp.max()
         return data.set_index('timestamp')
 
+    def _set_data(self):
+        """
+            Set internal dataframes
+        """
+        if self.interval_major != self.interval_minor:
+            self.data_minor = self.read_data(self.filename_minor).loc[self.start_time:]
+        else:
+            self.data_minor = pd.DataFrame([])
+        self.data_major = self.read_data(self.filename_major).loc[self.start_time:]
+
     def get_data(self):
-        data = self.load_all_data().loc[self.start_time:]
-        return self.manage_data_(data)
+        """
+            return all data available
+        """
+        if self.mode in ['test', 'PROD']:
+            self._set_data()
+        return self._manage_data(self.data_minor, self.data_major)
 
-    def get_data_to(self, current_time=None):
-        if not current_time:
-            raise ValueError
+    def get_data_until(self, current_time):
+        """
+            return data until current_time
+        """
+        if self.mode in ['test', 'PROD']:
+            self._set_data()
+        if self.mode == 'sim':
+            self._evaluate_EOF(current_time)
+        data_minor = self.data_minor.loc[:current_time, ]
+        data_major = self.data_major.loc[:current_time, ]
+        return self._manage_data(data_minor, data_major)
+
+    def _manage_data(self, data_minor, data_major):
+        if self.interval_minor == self.interval_major:
+            return data_major
         else:
-            self.evaluate_current_time_(current_time)
-            data = self.all_data.loc[self.start_time:current_time, ]
-            return self.manage_data_(data)
+            if self.regroup_data:
+                return self._data_grouped(data_minor, self.minutes_major, self.minutes_minor)
+            else:
+                if data_minor.index.max() > data_major.index.max():
+                    return data_major.append(data_minor.iloc[-1, ])
+                else:
+                    return data_major
 
-    def manage_data_(self, data):
-        if self.interval_source == self.interval_group:
-            return data
-        else:
-            return self._data_grouped(data, self.minutes_group, self.minutes_source)
-
-    def evaluate_current_time_(self, current_time):
+    def _evaluate_EOF(self, current_time):
         if current_time == self.last_timestamp:
             self.end_data = True
 
@@ -72,14 +114,14 @@ class Data_Manager:
         max_records = 999_999 if not max_records else max_records
         i = 0
         while len(data_chunk) > 0 and i < max_records:
-            data_grouped.append(self.aggregator_(data_chunk))
+            data_grouped.append(self._aggregator(data_chunk))
             end_datetime = start_datetime - timedelta(minutes=minutes_source)
             start_datetime = end_datetime - timedelta(minutes=window)
             data_chunk = data.loc[start_datetime:end_datetime, ]
             i += 1
         return pd.concat(data_grouped)
 
-    def aggregator_(self, data_chunk):
+    def _aggregator(self, data_chunk):
         return pd.DataFrame({data_chunk.index[-1]: data_chunk.agg({'open': lambda x: x[0],
                                                                    'high': max,
                                                                    'low': min,

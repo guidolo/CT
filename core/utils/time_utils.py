@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
 
-binsizes = {"1m": 1, "15m": 15, "5m": 5, "1h": 60, "1d": 1440}
+binsizes = {"1m": 1, "5m": 5, "10m": 10, "15m": 15, "1h": 60, "1d": 1440}
 
 
 def seconds_to_next_event(interval, plus_seconds=0, now_=None):

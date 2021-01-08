@@ -12,20 +12,20 @@ class BaseTrader():
     def __init__(self,
                  mode='test',
                  symbol='BTCUSDT',
-                 interval_source='5m',
-                 interval_group='1h',
+                 interval_minor='5m',
+                 interval_major='1h',
                  start_time=datetime.fromisoformat('2020-01-01 00:00:00'),
                  on_investment=False  # TODO, recuperar automaticamente
                  ):
         assert mode in ['PROD', 'test', 'sim'], 'mode should be PROD, test or sim'  # TODO pasar a un exception general
         self.mode = mode
         self.symbol = symbol
-        self.interval_source = interval_source
-        self.interval_group = interval_group
+        self.interval_minor = interval_minor
+        self.interval_major = interval_major
         self.data_mgr = Data_Manager(mode,
                                      symbol,
-                                     interval_source=interval_source,
-                                     interval_group=interval_group,
+                                     interval_minor=interval_minor,
+                                     interval_major=interval_major,
                                      start_time=start_time)
         self.con = Binance_Connector(mode, symbol)
 
@@ -34,7 +34,7 @@ class BaseTrader():
         self.trade_record = {}
         self.last_timestamp = self.data_mgr.start_time
         self.current_time = self.data_mgr.start_time + \
-                            timedelta(minutes=get_minutes_from_interval(self.interval_source))
+                            timedelta(minutes=get_minutes_from_interval(self.interval_minor))
         if on_investment:
             trace_data = {self.trade_num: {'start_datetime': self.current_time,
                                            'start_price': self.con.get_current_price()
@@ -64,7 +64,7 @@ class BaseTrader():
             logging.info('get_data: OK')
             return data
         else:
-            return self.data_mgr.get_data_to(self.current_time)
+            return self.data_mgr.get_data_until(self.current_time)
 
     def evaluate(self, percentage_trade=1):
         logging.info('trade evaluate: Start Evaluation')
@@ -85,9 +85,9 @@ class BaseTrader():
                 else:
                     logging.info('trade evaluation: Buying Evaluation: False')
             if self.mode in ['test', 'PROD']:
-                self.wait(seconds_to_next_event(self.interval_source, 20) / 60)
+                self.wait(seconds_to_next_event(self.interval_minor, 20) / 60)
             else:
-                self.update_current_time_(get_minutes_from_interval(self.interval_source))
+                self.update_current_time_(get_minutes_from_interval(self.interval_minor))
 
     def trace(self, transaction_type: str, data):
         if transaction_type == 'buy':
