@@ -9,6 +9,7 @@ import json
 import requests
 import logging
 import time
+import os
 
 
 class Data_Updater():
@@ -18,14 +19,15 @@ class Data_Updater():
         self.symbol = symbol
         self.time_interval = time_interval
         self.minutes_interval = get_minutes_from_interval(time_interval)
-        self.data_path = 'data/{}-{}-data.csv'.format(symbol, time_interval)
         self.data = []
         self.binance_client = Client
         self.last_timestamp = datetime.strptime('1 Jan 2020', '%d %b %Y')
+        self.rootpath = Path(os.path.dirname(os.path.realpath(__file__))).parent.parent  # TODO crear un setting con los paths
+        self.data_path = str(self.rootpath) + '/data/{}-{}-data.csv'.format(symbol, time_interval)
         self.get_initial_data()
 
     def init_client(self):
-        with open('secrets/binance.secrets', 'r') as f:
+        with open(str(self.rootpath) + '/secrets/binance.secrets', 'r') as f:
             secrets = json.loads(f.read())
         status = False
         while not status:
@@ -41,6 +43,8 @@ class Data_Updater():
         if Path(self.data_path).exists():
             self.data = pd.read_csv(self.data_path)
             self.last_timestamp = self.data.timestamp.iloc[-1]
+        else:
+            print('No Data Found')
         return self
 
     def get_old_new_timestamp(self):

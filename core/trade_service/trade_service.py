@@ -1,7 +1,7 @@
 import logging
 import sys
 from core.trade_service.traders.MA_Trader import MA_Trader
-from core.trade_service.traders.baselines import UpperLower_trader
+from core.trade_service.traders.HODL_trader import HODL_trader
 import argparse
 
 logging.basicConfig(filename='trade_service.log',
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     logging.info('Start TRADER SERVICE')
 
     MODELS = {
-        "baseline": UpperLower_trader,
+        "HODL": HODL_trader,
         "MATrader": MA_Trader
     }
 

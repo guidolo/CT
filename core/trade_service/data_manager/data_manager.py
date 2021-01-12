@@ -24,6 +24,7 @@ class Data_Manager:
                  mode='test',
                  symbol='BTCUSDT',
                  start_time=datetime.fromisoformat('2020-01-01 00:00:00'),
+                 end_time=None,
                  interval_minor='5m',
                  interval_major='1h',
                  regroup_data=False
@@ -36,11 +37,11 @@ class Data_Manager:
         self.minutes_minor = get_minutes_from_interval(interval_minor)
         self.minutes_major = get_minutes_from_interval(interval_major)
         self.start_time = start_time
+        self.end_time = end_time
         self.last_timestamp = None
         self.end_data = False
         # TODO pasar todo esta parte de la carga del archivo a un metodo
-        rootpath = Path(
-            os.path.dirname(os.path.realpath(__file__))).parent.parent.parent  # TODO crear un setting con los paths
+        rootpath = Path(os.path.dirname(os.path.realpath(__file__))).parent.parent.parent  # TODO crear un setting con los paths
         self.filename_minor = str(rootpath) + '/data/{}-{}-data.csv'.format(self.symbol, self.interval_minor)
         self.filename_major = str(rootpath) + '/data/{}-{}-data.csv'.format(self.symbol, self.interval_major)
         assert self.minutes_minor <= self.minutes_major, 'interval_minor should be lower than interval_mayor'
@@ -56,8 +57,16 @@ class Data_Manager:
         data = pd.read_csv(filename)
         data.loc[:, 'timestamp'] = pd.to_datetime(data.timestamp)
         data = data.sort_values('timestamp')
-        self.last_timestamp = data.timestamp.max()
         return data.set_index('timestamp')
+
+    def filter_data(self):
+        """
+            Filters data in case it is necessary
+        """
+        if self.mode == 'sim' and self.end_time:
+            self.data_major = self.data_major.loc[:self.end_time]
+            if len(self.data_minor) > 0:
+                self.data_minor = self.data_minor.loc[:self.end_time]
 
     def _set_data(self):
         """
@@ -68,6 +77,8 @@ class Data_Manager:
         else:
             self.data_minor = pd.DataFrame([])
         self.data_major = self.read_data(self.filename_major).loc[self.start_time:]
+        self.filter_data()
+        self.last_timestamp = self.data_major.index.max()
 
     def get_data(self):
         """
