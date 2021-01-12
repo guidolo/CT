@@ -107,8 +107,11 @@ class Data_Manager:
             if self.regroup_data:
                 return self._data_grouped(data_minor, self.minutes_major, self.minutes_minor)
             else:
-                if data_minor.index.max() > data_major.index.max():
-                    return data_major.append(data_minor.iloc[-1, ])
+                if self.interval_major != self.interval_minor:
+                    if data_minor.index.max() > data_major.index.max():
+                        return data_major.append(data_minor.iloc[-1, ])
+                    else:
+                        return data_major
                 else:
                     return data_major
 
