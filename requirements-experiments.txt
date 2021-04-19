@@ -1,2 +1,3 @@
---upgrade plotly
-fbprophet
+scikit-learn
+#--upgrade plotly
+#fbprophet

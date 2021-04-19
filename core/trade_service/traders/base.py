@@ -117,12 +117,9 @@ class BaseTrader():
     def score(self, X, y):
         result_pd = pd.DataFrame(self.trade_record).T
         if len(result_pd) > 0:
-            #result_pd.loc[:, 'gain'] = result_pd.apply(
-            #    lambda row: (row.end_price - row.start_price) * 100 / row.start_price,
-            #    axis=1)
-            result_pd.loc[:, 'gain'] = scores.price_based_gain_adjusted(result_pd)
-            result_pd.dropna(inplace=True)
-            return result_pd.gain.sum()
+            #result_pd.loc[:, 'gain'] = scores.gain_simulation(result_pd)
+            #result_pd.dropna(inplace=True)
+            return scores.gain_simulation(result_pd)
         else:
             return 0
 
